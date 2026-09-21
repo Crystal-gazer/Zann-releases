@@ -33,7 +33,7 @@ jobs:
           Start-Process -FilePath $installer.FullName -ArgumentList "/S" -Wait
         shell: pwsh
 
-     - name: Verify Installation
+      - name: Verify Installation
         run: |
           # Dynamically resolves to C:\Users\runneradmin\AppData\Local on the GitHub runner
           $installPath = "$env:LOCALAPPDATA\Zann" 
