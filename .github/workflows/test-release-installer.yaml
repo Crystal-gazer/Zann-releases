@@ -1,0 +1,65 @@
+name: Test Release Installer
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch: # Allows manual triggering from the Actions tab
+
+jobs:
+  test-installer:
+    runs-on: windows-latest
+    permissions:
+      contents: read # Required to download release assets
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download Installer from Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # Downloads the executable from the latest release automatically
+          gh release download --pattern "*.exe"
+        shell: pwsh
+
+      - name: Run Installer Silently
+        run: |
+          # Automatically targets the downloaded .exe
+          $installer = Get-ChildItem -Filter "*.exe" | Select-Object -First 1
+          Write-Output "Running $($installer.Name)..."
+          
+          # /S is the standard silent flag for NSIS
+          Start-Process -FilePath $installer.FullName -ArgumentList "/S" -Wait
+        shell: pwsh
+
+      - name: Verify Installation
+        run: |
+          # TODO: Update this path to match your actual installation directory
+          $installPath = "C:\Program Files\Zann" 
+          
+          if (Test-Path "$installPath\zann.exe") {
+              Write-Output "Success: Executable found at $installPath"
+          } else {
+              throw "Error: Installation directory or executable not found."
+          }
+        shell: pwsh
+
+      - name: Test Uninstaller
+        run: |
+          # TODO: Update this path to match your actual uninstaller
+          $uninstaller = "C:\Program Files\Zann\uninstall.exe"
+          
+          if (Test-Path $uninstaller) {
+              Start-Process -FilePath $uninstaller -ArgumentList "/S" -Wait
+              Start-Sleep -Seconds 2 # Allow filesystem to catch up
+              
+              if (Test-Path "C:\Program Files\Zann") {
+                  Write-Output "Warning: Program folder still exists after uninstall."
+              } else {
+                  Write-Output "Success: Uninstaller cleanly removed the program folder."
+              }
+          } else {
+              throw "Error: Uninstaller not found."
+          }
+        shell: pwsh
