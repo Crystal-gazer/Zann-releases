@@ -33,28 +33,27 @@ jobs:
           Start-Process -FilePath $installer.FullName -ArgumentList "/S" -Wait
         shell: pwsh
 
-      - name: Verify Installation
+     - name: Verify Installation
         run: |
-          # TODO: Update this path to match your actual installation directory
-          $installPath = "C:\Program Files\Zann" 
+          # Dynamically resolves to C:\Users\runneradmin\AppData\Local on the GitHub runner
+          $installPath = "$env:LOCALAPPDATA\Zann" 
           
           if (Test-Path "$installPath\zann.exe") {
               Write-Output "Success: Executable found at $installPath"
           } else {
-              throw "Error: Installation directory or executable not found."
+              throw "Error: Installation directory or executable not found at $installPath"
           }
         shell: pwsh
 
       - name: Test Uninstaller
         run: |
-          # TODO: Update this path to match your actual uninstaller
-          $uninstaller = "C:\Program Files\Zann\uninstall.exe"
+          $uninstaller = "$env:LOCALAPPDATA\Zann\uninstall.exe"
           
           if (Test-Path $uninstaller) {
               Start-Process -FilePath $uninstaller -ArgumentList "/S" -Wait
               Start-Sleep -Seconds 2 # Allow filesystem to catch up
               
-              if (Test-Path "C:\Program Files\Zann") {
+              if (Test-Path "$env:LOCALAPPDATA\Zann") {
                   Write-Output "Warning: Program folder still exists after uninstall."
               } else {
                   Write-Output "Success: Uninstaller cleanly removed the program folder."
